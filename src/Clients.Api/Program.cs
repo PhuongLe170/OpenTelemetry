@@ -1,4 +1,3 @@
-using System.Reflection;
 using System.Text.Json.Serialization;
 using Clients.Api;
 using Clients.Api.Clients;
@@ -6,9 +5,6 @@ using Clients.Api.Clients.Risk;
 using Clients.Api.Extensions;
 using Infrastructure.RabbitMQ;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
-using OpenTelemetry.Resources;
-using OpenTelemetry.Trace;
 using RiskEvaluator;
 using StackExchange.Redis;
 
@@ -43,19 +39,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.AddHealthChecksConfiguration();
 
-builder.Services.AddOpenTelemetry()
-    .ConfigureResource(resource => resource
-        .AddService(
-            serviceName: "Clients.Api",
-            serviceNamespace: "Dometrain.Courses.OpenTelemetry",
-            serviceVersion: Assembly.GetExecutingAssembly().GetName().Version!.ToString())
-    )
-    .WithTracing(tracing =>
-        tracing
-            .AddAspNetCoreInstrumentation()
-            .AddNpgsql()
-            .AddRedisInstrumentation()
-            .AddConsoleExporter());
+builder.AddOpenTelemetry();
 
 var app = builder.Build();
 

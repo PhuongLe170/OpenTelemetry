@@ -1,6 +1,7 @@
 using Accounts.Contracts.Events;
 using Infrastructure.RabbitMQ;
 using Notifications;
+using Notifications.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +15,8 @@ builder.Services.AddScoped<RabbitMqConsumer<AccountCreated>>(
 
 builder.Services.AddHealthChecks()
     .AddRabbitMQ(rabbitConnectionString: builder.Configuration.GetConnectionString("RabbitMq")!);
+
+builder.AddOpenTelemetry();
 
 var app = builder.Build();
 

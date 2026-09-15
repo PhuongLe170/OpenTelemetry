@@ -1,4 +1,5 @@
 using Reporting;
+using Reporting.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +18,8 @@ builder.Services.AddHostedService<ReportingHostedService>(
     )
 );
 
+
+builder.AddOpenTelemetry();
 
 var app = builder.Build();
 

@@ -1,12 +1,12 @@
 @Clients.Api_HostAddress = http://localhost:8080
 
-POST http://localhost:8080/clients/
+POST https://localhost:7057/clients/
 Accept: application/json
 Content-Type: application/json
 
 {
   "name": "John Doe",
-  "email": "johntest@random.com",
+  "email": "johntest122@random.com",
   "membership": "Regular",
   "BirthDate": "1990-01-01"
 }

@@ -11,6 +11,7 @@
         ConnectionStrings__RabbitMq: amqp://guest:guest@rabbitmq:5672/
         RiskEvaluator__Url: http://risk.evaluator.service:8080
         Feature__PublishEventFailure: false
+        OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
     ports:  
       - "8080:8080"
     depends_on:
@@ -44,6 +45,7 @@
     environment:
         ConnectionStrings__AccountsDb: Host=accounts.db;Port=5432;Database=AccountsDb;Username=postgres;Password=postgres
         ConnectionStrings__RabbitMq: amqp://guest:guest@rabbitmq:5672/
+        OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
     ports:
       - "8081:8080"
     depends_on:
@@ -65,6 +67,7 @@
       dockerfile: src/Notifications/Dockerfile
     environment:
         ConnectionStrings__RabbitMq: amqp://guest:guest@rabbitmq:5672/
+        OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
     ports:
       - "8082:8080"
     depends_on:
@@ -77,6 +80,7 @@
       dockerfile: src/RiskEvaluator/Dockerfile
     environment:
       Feature__PremiumMembershipFailure: false
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
     ports:
       - "8083:8080"
   reporting.service:
@@ -87,7 +91,13 @@
       dockerfile: src/Reporting/Dockerfile
     environment:
         ConnectionStrings__RabbitMq: amqp://guest:guest@rabbitmq:5672/
+        OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
     ports:
       - "8084:8080"
     depends_on:
       - rabbitmq
+  jaeger:
+    image: jaegertracing/all-in-one:1.58.0
+    ports:
+      - "16686:16686" # Jaeger Web UI
+      - "4317:4317"   # OTLP gRPC
