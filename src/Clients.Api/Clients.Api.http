@@ -1,0 +1,25 @@
+@Clients.Api_HostAddress = http://localhost:8080
+
+POST http://localhost:8080/clients/
+Accept: application/json
+Content-Type: application/json
+
+{
+  "name": "John Doe",
+  "email": "johntest@random.com",
+  "membership": "Regular",
+  "BirthDate": "1990-01-01"
+}
+
+###
+
+
+GET http://localhost:8080/clients/57f28e62-705b-446f-98b9-481388fd9d45
+Accept: application/json
+
+###
+
+GET http://localhost:8080/clients/
+Accept: application/json
+
+###
