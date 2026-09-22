@@ -1,5 +1,6 @@
 using System.Reflection;
 using OpenTelemetry.Resources;
+using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 
 namespace Notifications.Extensions;
@@ -27,6 +28,13 @@ public static class OpenTelemetryConfigurationExtensions
                 tracing
                     .AddAspNetCoreInstrumentation()
                     .AddConsoleExporter()
+                    .AddOtlpExporter())
+            .WithMetrics(metrics =>
+                metrics
+                    .AddAspNetCoreInstrumentation()
+                    // Built-in meters shipped by ASP.NET Core / Kestrel
+                    .AddMeter("Microsoft.AspNetCore.Hosting")
+                    .AddMeter("Microsoft.AspNetCore.Server.Kestrel")
                     .AddOtlpExporter());
 
         return builder;

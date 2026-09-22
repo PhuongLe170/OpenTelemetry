@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json;
+using Clients.Api.Diagnostics;
 using Clients.Api.Diagnostics.Extensions;
 using Clients.Api.Clients.Risk;
 using Clients.Contracts.Events;
@@ -76,6 +77,10 @@ internal static class ClientsApi
                 await db.SaveChangesAsync();
 
                 Activity.Current.EnrichWithClient(client);
+
+                // Tag the measurement so the counter can be sliced by membership in Grafana
+                ApplicationDiagnostics.ClientsCreatedCounter.Add(1,
+                    new KeyValuePair<string, object?>("clients.membership", client.Membership.ToString()));
 
                 eventsPublisher.Publish(client);
                 

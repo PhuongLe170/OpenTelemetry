@@ -1,4 +1,4 @@
-﻿services:
+services:
   clients.api:
     image: clients.api
     restart: always
@@ -11,7 +11,7 @@
         ConnectionStrings__RabbitMq: amqp://guest:guest@rabbitmq:5672/
         RiskEvaluator__Url: http://risk.evaluator.service:8080
         Feature__PublishEventFailure: false
-        OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+        OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
     ports:  
       - "8080:8080"
     depends_on:
@@ -19,6 +19,7 @@
       - rabbitmq
       - clients.cache
       - risk.evaluator.service
+      - otel-collector
   clients.db:
     image: postgres
     environment:
@@ -45,12 +46,13 @@
     environment:
         ConnectionStrings__AccountsDb: Host=accounts.db;Port=5432;Database=AccountsDb;Username=postgres;Password=postgres
         ConnectionStrings__RabbitMq: amqp://guest:guest@rabbitmq:5672/
-        OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+        OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
     ports:
       - "8081:8080"
     depends_on:
       - accounts.db
       - rabbitmq
+      - otel-collector
   accounts.db:
     image: postgres
     environment:
@@ -67,11 +69,12 @@
       dockerfile: src/Notifications/Dockerfile
     environment:
         ConnectionStrings__RabbitMq: amqp://guest:guest@rabbitmq:5672/
-        OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+        OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
     ports:
       - "8082:8080"
     depends_on:
       - rabbitmq
+      - otel-collector
   risk.evaluator.service:
     image: risk.evaluator.service
     restart: always
@@ -80,9 +83,11 @@
       dockerfile: src/RiskEvaluator/Dockerfile
     environment:
       Feature__PremiumMembershipFailure: false
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
     ports:
       - "8083:8080"
+    depends_on:
+      - otel-collector
   reporting.service:
     image: reporting.service
     restart: always
@@ -91,13 +96,50 @@
       dockerfile: src/Reporting/Dockerfile
     environment:
         ConnectionStrings__RabbitMq: amqp://guest:guest@rabbitmq:5672/
-        OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+        OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
     ports:
       - "8084:8080"
     depends_on:
       - rabbitmq
+      - otel-collector
   jaeger:
     image: jaegertracing/all-in-one:1.58.0
     ports:
       - "16686:16686" # Jaeger Web UI
-      - "4317:4317"   # OTLP gRPC
+    # 4317 is no longer published: the collector receives OTLP and forwards to Jaeger.
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.103.0
+    volumes:
+      - ./otel-collector/otel-collector-config.yml:/etc/otel/config.yaml
+    command: --config /etc/otel/config.yaml
+    environment:
+      JAEGER_ENDPOINT: "jaeger:4317"
+    ports:
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+      - "8889:8889"   # Prometheus exporter (scrape endpoint)
+      - "8888:8888"   # Collector's own internal telemetry
+      - "13133:13133" # health_check extension
+      - "55679:55679" # zpages extension
+    depends_on:
+      - jaeger
+      - prometheus
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+  grafana:
+    image: grafana/grafana:11.1.0
+    volumes:
+      - ./grafana/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: "Admin"
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+      - jaeger

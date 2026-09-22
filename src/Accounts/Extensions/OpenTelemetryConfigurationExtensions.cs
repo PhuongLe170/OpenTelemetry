@@ -1,6 +1,7 @@
 using System.Reflection;
 using Npgsql;
 using OpenTelemetry.Resources;
+using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 
 namespace Accounts.Extensions;
@@ -30,6 +31,14 @@ public static class OpenTelemetryConfigurationExtensions
                     .AddHttpClientInstrumentation()
                     .AddNpgsql()
                     .AddConsoleExporter()
+                    .AddOtlpExporter())
+            .WithMetrics(metrics =>
+                metrics
+                    .AddAspNetCoreInstrumentation()
+                    .AddHttpClientInstrumentation()
+                    // Built-in meters shipped by ASP.NET Core / Kestrel
+                    .AddMeter("Microsoft.AspNetCore.Hosting")
+                    .AddMeter("Microsoft.AspNetCore.Server.Kestrel")
                     .AddOtlpExporter());
 
         return builder;
